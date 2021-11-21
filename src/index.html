@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html ng-app="droneSynthApp">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=1.0,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+
+
+    
+    <link rel="stylesheet" href="css/radio.css" />
+    <link rel="stylesheet" href="css/main.css" />
+
+    <script src="jslib//TweenLite.min.js"></script>
+    <script src="jslib/Draggable.min.js"></script>
+    <script src="jslib/CSSPlugin.min.js"></script>
+    <script src="jslib/ThrowPropsPlugin.min.js"></script>
+    <script src="jslib/tuna-min.js"></script>
+    <script src="jslib/jquery.min.js"></script>
+    <script src="jslib/jquery.knob.min.js"></script>
+    <script src="jslib/angular.min.js"></script>
+    <script src="jslib/angular-knob.js"></script>
+    <script src="NoiseGenerator.js"></script>
+    <script src="NoiseOscillator.js"></script>
+    <script src="jslib/recorder.js"></script>
+    <script src="app.js"></script>
+    <script src="MainCtrl.js"></script>
+    <script src="EffectsCtrl.js"></script>
+    <script src="KeysCtrl.js"></script>
+    <script src="RecorderCtrl.js"></script>
+    <script src="key.directive.js"></script>
+    <script src="keys.service.js"></script>
+    <script src="effects.service.js"></script>
+    <script src="presets.service.js"></script>
+    <script src="notes.service.js"></script>
+    <script src="monkey.service.js"></script>
+    <script src="drag2dim.directive.js"></script>
+</head>
+
+<body ng-controller="MainCtrl">
+    <div class="full_container">
+        <div class="preset_popup" ng-show="loading_preset || saving_preset">
+            <div class="close_but" ng-click="saving_preset=false; loading_preset=false">×</div>
+            <div class="savepreset" ng-show="saving_preset">Save text in the frame as text somewhere on your computer:
+                <!--<div class="tf">{{savePreset()}}</div>-->
+                <div class="tf">{{curPreset}}</div>
+               <!-- <div class="but">Copy to clipboard</div>-->
+                <!--<div class="close_but" ng-click="showing_preset=false">×</div>-->
+            </div>
+            <div class="loadpreset" ng-show="loading_preset">
+                Paste preset-text here:
+                
+                    <textarea id="presetinput" width="600px" height="400px"></textarea>
+                    
+                <div class="but" ng-click="loadTextPreset(); saving_preset=false; loading_preset=false">NEXT</div>
+            </div>
+        </div>
+    <div class="recZone" ng-controller="RecorderCtrl" ng-show="!isMobile">
+        <div class="recBut" ng-class="{'active':state=='recording'}" ng-click="prerecord()"></div>-
+        <!--<a href="help.html" target="_blank" class="help"></a>-->
+        <div class="record-alert" ng-show="state=='prerecording'">
+            <div ng-click="closeRecAlert()" class="close_but">x</div>
+            2 minutes only!<br/>
+            read <a href="help-en.html" target="_blank">help</a><br/>
+            <a href='' ng-click="doRecord()">CONTINUE RECORDING</a>
+            </div>
+    </div>
+    <div class="topmenu">
+        <!--<a href="" ng-click="generate()">GENERATE</a>-->
+        <!--<div class="header effect_header">DEMO SOUNDS:</div>
+        <div class="item"><a href="" ng-click="loadPreset(0)">load preset 0</a></div>
+        <div class="item"><a href="" ng-click="loadPreset(5)">load preset 5</a></div>
+        <div class="item"><a href="" ng-click="savePreset()">save preset</a></div>-->
+        <div class="header effect_header">DEMO SOUNDS:
+       <!-- <a href="" ng-click="loadPreset(0)">load preset 0</a>
+        <a href="" ng-click="loadPreset(5)">load preset 5</a>-->
+        
+        <span  ng-repeat="preset in getPresetsAr()"><a href="" ng-click="loadPreset($index)">{{ preset.global.name }}</a>&nbsp;</span>
+         | <!--<a href="" ng-click="saving_preset=true">save preset</a>-->
+         <a href="" ng-click="savePreset()">save preset</a>
+        <a href="" ng-click="loading_preset=true">load preset</a>
+        <!--<a href="" ng-click="savePreset()">save preset</a>-->
+        </div>
+    </div>
+    <div class="intro" ng-hide="getActiveOnlyAr().length > 0">
+        <a href="" ng-click="setLanguage('en')">EN</a> / 
+        <a href="" ng-click="setLanguage('ru')">RU</a><br/><br/>
+        <div ng-show="language=='en'">
+Welcome!<br/>
+All the tones are randomly generated noise loops passed through the lowpass filter. You can adjust filter’s width, pan and volume of the filter (drag the slider button and the circle inside the slider button). The length of the basic loop is adjustable, too. To hear the sound, first you need to activate a note in the keyboard section and then add volume.
+Load one of the demo sounds 
+        <span  ng-repeat="preset in getPresetsAr()"><a href="" ng-click="loadPreset($index)">{{ preset.global.name }}</a>&nbsp;</span>
+        or start a new project by pressing keys at the bottom. 
+        </div>
+        <div ng-show="language=='ru'">
+            ИНСТРУКЦИЯ<br/>
+Каждая нота - отдельный слайдер. Активируется при клике на клавишу на клавиатуре, деактивируется также или крестиком. Все ноты выстраиваются в ряд по возрастанию. При активации громкость нулевая, чтобы можно было подстроить белым кружком чистоту ( чем он выше, тем больше белого шума отфильтровывается, звук чище, при максимальных значениях похоже на фидбэк) и панораму, а так же выбрать, нужен ли этой ноте овердрайв и реверберация). После этого двигать внешний черный блок для регулировки громкости. Источник звука - белый шум, что и дает текстурность звука. Этот ритмический рисунок можно поменять в секции NOISE LOOP LENGTH сгенерировав отрезок другой длины (или той же самой, повторно нажав на активную кнопку).<br/> 
+Работает лучше всего в хроме на всех девайсах. Точно не работает в ИЕ и родных браузерах андродидов включительно до 4.4.4, в прочих - как повезёт.
+        </div>
+    </div>
+    <div class="knobs">
+        <div class="effect_block noise_loop_block">
+            <div class="effect_header">NOISE LOOP LENGTH</div>
+            <div class="noiseLoopLength" ng-class="{'active': sec == curLoopLength()}" ng-click="generateLoop(sec)" ng-repeat="sec in getDefaults().noise.noiseLoopLength">{{sec}}</div>
+        </div>
+        <div class="effects" ng-controller="EffectsCtrl">
+            <div class="effect_block">
+                <div class="blocker" ng-show="getNodeByName('overdrive').bypass"></div>
+                <div class="effect_header">
+                    <div class="led_9px" ng-click="toggleBypass('overdrive')"></div>OVERDRIVE</div>
+
+                <div class="overdriveTypes_block">
+                    <div class="noiseLoopLength" ng-click="changeOverDriveType($index)" ng-class="{'active': $index == getOverDriveType()}" ng-repeat="od in [1,2,3]">{{od}}</div>
+                </div>
+                <div class="knobholder" style="float:right">
+                    <input type="text" id="overdrive_amount" class="dial" data-min="0" data-max="100" data-width="60" data-height="60" value="50" data-step="1" data-thickness=".2" data-skin="tron" data-angleOffset=-125 data-angleArc=250 data-fgColor="#cc6b06">
+                    <div class="knobname">drive</div>
+                </div>
+            </div>
+            <div class="effect_block">
+                <div class="blocker" ng-show="getNodeByName('reverb').bypass"></div>
+                <div class="effect_header">
+                    <div class="led_9px" ng-click="toggleBypass('reverb')"></div>REVERB</div>
+                <div class="impulseResponse_block">
+                    <div class="impulseResponse" ng-click="changeInpulseResp($index)" ng-class="{'active':$index ==getInpulseResp()}" ng-repeat="ir in getIRs()">{{ir.name}}</div>
+                </div>
+                <div class="knobholder" style="float:right">
+                    <input type="text" id="reverb_wetdry" class="dial" data-min="0" data-max="100" data-width="60" data-height="60" value="5" data-step="1" data-thickness=".2" data-skin="tron" data-angleOffset=-125 data-angleArc=250 data-fgColor="#cc6b06">
+                    <div class="knobname">wet/dry</div>
+                </div>
+            </div>
+            <div class="effect_block" ng-show="getNodeExistece('moog')">
+                <div class="blocker" ng-show="getNodeByName('moog').bypass"></div>
+                <div class="effect_header">
+                    <div class="led_9px" ng-click="toggleBypass('moog')"></div>MOOG</div>
+                <div class="knobholder" style="float:right">
+                    <input type="text" id="moog_resonance" class="dial" data-min="0" data-max="100" data-width="60" data-height="60" value="5" data-step="1" data-thickness=".2" data-skin="tron" data-angleOffset=-125 data-angleArc=250 data-fgColor="#cc6b06">
+                    <div class="knobname">moog</div>
+                </div>
+            </div>
+            <div class="effect_block" ng-show="getNodeExistece('tremolo')">
+                <div class="blocker" ng-show="getNodeByName('tremolo').bypass"></div>
+                <div class="effect_header">
+                    <div class="led_9px" ng-click="toggleBypass('tremolo')"></div>TREMOLO</div>
+                <div class="knobholder">
+                    <input type="text" id="tremolo_intensity" class="dial" data-min="0" data-max="100" data-width="60" data-height="60" value="5" data-step="1" data-thickness=".2" data-skin="tron" data-angleOffset=-125 data-angleArc=250 data-fgColor="#cc6b06">
+                    <div class="knobname">intensity</div>
+                </div>
+                <div class="knobholder">
+                    <input type="text" id="tremolo_rate" class="dial" data-min="0" data-max="100" data-width="60" data-height="60" value="5" data-step="1" data-thickness=".2" data-skin="tron" data-angleOffset=-125 data-angleArc=250 data-fgColor="#cc6b06">
+                    <div class="knobname">rate</div>
+                </div>
+            </div>
+            <div class="effect_block">
+                <div class="effect_header">
+                    GLOBAL VOLUME</div>
+                <div class="knobholder">
+                    <input type="text" id="global_volume" class="dial" data-min="0" data-max="100" data-width="60" data-height="60" value="50" data-step="1" data-thickness=".2" data-skin="tron" data-angleOffset=-125 data-angleArc=250 data-fgColor="#cc6b06">
+                    <div class="knobname">volume</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="noiseGens">
+        <div class="panknob" drag2dim ng-repeat="knob in notesAr" index="{{$index}}" ng-style="getGenStyle()" ng-show="notesAr[$index].active">
+            <div class="outer">
+                <div class="notename">{{ noteName }}</div>
+                <div class="horline"></div>
+                <div class="vertline"></div>
+                <div class="inner"></div>
+            </div>
+            <div ng-click="deactivate()" class="close_but">x</div>
+            <div>
+                <div class="option-group">output to:</div>
+                <div class="option-group" ng-repeat="effect in getEffectsList()" on-repeat-finish="" ng-class="{'disabled': $index > effectNum}">
+                    <div ng-click="setOutput($index)">
+                        <div class="led_9px"></div>{{effect}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="hancock" ng-controller="KeysCtrl">
+        <div class="keyArrow left" ng-click="moveDown()"></div>
+        <div class="keysContainerOuter keys_outer">
+            <div class="keysContainer keys_inner">
+
+                <div class="key" ng-repeat="key in keys" ng-class="getColor($index)" index="{{$index}}" ng-click="toggleActive()" key>
+                    <div class="keyname" ng-show="$index%12 == 0">{{key.name}}</div>
+                    <div class="keyactive" ng-show="isActive"></div>
+                </div>
+
+            </div>
+        </div>
+        <div class="keyArrow right" ng-click="moveUp()"></div>
+    </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,1 @@
+/*All tones are random generated noise loops, passed through the lowpass filter. You can adjust filters width, pan and volume. Length of the basic loop is adjustable, too. To hear sound you need actvate note first in keyboard section and then add volume. */
